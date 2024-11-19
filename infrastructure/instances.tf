@@ -11,7 +11,7 @@ resource "hcloud_server" "cpl_node_1" {
 
   network {
     network_id = hcloud_network.k8s_net.id
-    ip         = "10.0.1.5"
+    ip         = var.cpl_internal_ipv4
     alias_ips  = []
   }
 
@@ -42,7 +42,7 @@ resource "hcloud_server" "worker_node_1" {
 
   network {
     network_id = hcloud_network.k8s_net.id
-    ip         = "10.0.1.6"
+    ip         = var.worker_internal_ipv4
     alias_ips  = []
   }
 
