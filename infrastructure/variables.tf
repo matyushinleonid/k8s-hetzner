@@ -13,6 +13,16 @@ variable "subnet_cidr" {
   default = "10.0.1.0/24"
 }
 
+variable "cpl_internal_ipv4" {
+  type    = string
+  default = "10.0.1.5"
+}
+
+variable "worker_internal_ipv4" {
+  type    = string
+  default = "10.0.1.6"
+}
+
 variable "server_type" {
   type    = string
   default = "cx22"
