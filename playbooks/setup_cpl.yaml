@@ -1,4 +1,3 @@
----
 - name: Setup Kubernetes Control Plane Node
   hosts: control_plane_nodes
   become: true
@@ -6,10 +5,8 @@
     pod_network_cidr: "192.168.0.0/16"
     control_plane_endpoint: "{{ internal_ipv4 }}:6443"
     internal_ipv4: "{{ hostvars[inventory_hostname]['internal_ipv4'] }}"
-
   roles:
     - k8s_common
-
   tasks:
     - name: Create kubeadm configuration file
       copy:
@@ -26,27 +23,22 @@
               - "{{ internal_ipv4 }}"
             extraArgs:
               advertise-address: "{{ internal_ipv4 }}"
-
     - name: Initialize Kubernetes control plane
       command: kubeadm init --config=/root/kubeadm-config.yaml --upload-certs --node-name={{ inventory_hostname }}
       args:
         creates: /etc/kubernetes/admin.conf
       register: kubeadm_init
       ignore_errors: yes
-
     - name: Fail if kubeadm init failed
       fail:
         msg: "kubeadm init failed. Check the logs."
       when: kubeadm_init.rc != 0
-
     - name: Save kubeadm join command
       shell: kubeadm token create --print-join-command --ttl 0
       register: join_command
-
     - name: Display join command
       debug:
         msg: "{{ join_command.stdout }}"
-
 - name: Fetch kubeconfig to Local Machine
   hosts: control_plane_nodes
   gather_facts: no
@@ -59,21 +51,18 @@
         state: directory
         mode: '0755'
       run_once: true
-
     - name: Fetch kubeconfig from control plane
       fetch:
         src: /etc/kubernetes/admin.conf
         dest: "{{ lookup('env', 'HOME') }}/.kube/hetzner.conf"
         flat: yes
         remote_src: yes
-
     - name: Update server address in kubeconfig to public IPv6
       delegate_to: localhost
       replace:
         path: "{{ lookup('env', 'HOME') }}/.kube/hetzner.conf"
         regexp: 'server: https://{{ internal_ipv4 }}:6443'
         replace: 'server: https://[{{ ansible_host }}]:6443'
-
     - name: Display success message
       delegate_to: localhost
       debug:

@@ -1,9 +1,19 @@
 # k8s-hetzner
 
+This repository provides a set of Terraform and Ansible scripts to provision a Kubernetes cluster on Hetzner Cloud.
+We use ipv4 networking and Cilium as the CNI.
+
+## How to use
+
 Provision base infrastructure on Hetzner Cloud
 ```bash
 cd ./infrastructure
 terraform apply -var="hcloud_token=$(cat ~/.hetzner/token)"
+```
+
+Once the VMs are provisioned, one can access them via SSH
+```bash
+ssh -i ~/.ssh/hcloud root@<VM public ipv6>
 ```
 
 Configure VMs and install k8s with kubeadm. Update `inventory.ini` with the public IPs of the VMs prior to running the playbooks

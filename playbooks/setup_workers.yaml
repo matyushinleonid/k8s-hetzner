@@ -1,28 +1,23 @@
----
 - name: Setup Kubernetes Worker Nodes
   hosts: worker_nodes
   become: true
   vars:
     control_plane_host: "{{ groups['control_plane_nodes'][0] }}"
     internal_ipv4: "{{ hostvars[inventory_hostname]['internal_ipv4'] }}"
-
   roles:
     - k8s_common
-
   tasks:
     - name: Get kubeadm join command from control plane
       command: kubeadm token create --print-join-command --ttl 0
       register: join_command_output
       delegate_to: "{{ control_plane_host }}"
       run_once: true
-
     - name: Join Kubernetes cluster
       command: "{{ join_command_output.stdout }} --node-name={{ inventory_hostname }}"
       args:
         creates: /etc/kubernetes/kubelet.conf
       register: kubeadm_join
       ignore_errors: yes
-
     - name: Fail if kubeadm join failed
       fail:
         msg: "kubeadm join failed. Check the logs."
