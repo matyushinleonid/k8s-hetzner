@@ -2,7 +2,8 @@
   hosts: control_plane_nodes
   become: true
   vars:
-    pod_network_cidr: "192.168.0.0/16"
+    pod_network_cidr: "192.168.0.0/16,fd00::/48"
+    service_cidr: "10.96.0.0/12,fd01::/112"
     control_plane_endpoint: "{{ internal_ipv4 }}:6443"
     internal_ipv4: "{{ hostvars[inventory_hostname]['internal_ipv4'] }}"
   roles:
@@ -18,11 +19,14 @@
           controlPlaneEndpoint: "{{ control_plane_endpoint }}"
           networking:
             podSubnet: "{{ pod_network_cidr }}"
+            serviceSubnet: "{{ service_cidr }}"
           apiServer:
             certSANs:
               - "{{ internal_ipv4 }}"
+              - "{{ ansible_host }}"
             extraArgs:
               advertise-address: "{{ internal_ipv4 }}"
+              bind-address: "::"
     - name: Initialize Kubernetes control plane
       command: kubeadm init --config=/root/kubeadm-config.yaml --upload-certs --node-name={{ inventory_hostname }}
       args:

@@ -1,7 +1,7 @@
 # k8s-hetzner
 
 This repository provides a set of Terraform and Ansible scripts to provision a Kubernetes cluster on Hetzner Cloud.
-We use ipv4 networking and Cilium as the CNI.
+We use ipv4/ipv6 dual-stack networking and Cilium as the CNI.
 
 ## How to use
 
@@ -28,8 +28,10 @@ Install CNI
 helm install cilium cilium/cilium --version 1.16.3 \
   --namespace kube-system \
   --set ipam.mode=kubernetes \
+  --set ipv6.enabled=true \
   --set ipv4.enabled=true \
-  --set ipv6.enabled=false \
+  --set dualStack=true \
+  --set nodeport.enabled=true \
   --set k8sServiceHost=10.0.1.5 \
   --set k8sServicePort=6443 \
   --set cluster.id=0 \
