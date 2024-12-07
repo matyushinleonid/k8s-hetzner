@@ -33,6 +33,11 @@ variable "image" {
   default = "ubuntu-24.04"
 }
 
+variable "home_location" {
+  type    = string
+  default = "nbg1"
+}
+
 variable "datacenter" {
   type    = string
   default = "nbg1-dc3"

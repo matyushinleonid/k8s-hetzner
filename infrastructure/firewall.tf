@@ -2,6 +2,18 @@ locals {
   all_ips = ["0.0.0.0/0", "::/0"]
 }
 
+resource "hcloud_firewall" "lb_firewall" {
+  name = "lb-firewall"
+
+  rule {
+    direction   = "in"
+    protocol    = "tcp"
+    port        = "80"
+    source_ips  = local.all_ips
+    description = "Allow HTTP"
+  }
+}
+
 resource "hcloud_firewall" "basic_firewall" {
   name = "basic-firewall"
 
@@ -45,7 +57,7 @@ resource "hcloud_firewall" "k8s_cpl_firewall" {
     direction   = "in"
     protocol    = "tcp"
     port        = "10250"
-    source_ips  = [var.subnet_cidr]
+    source_ips  = local.all_ips
     description = "Kubelet API"
   }
 
@@ -73,7 +85,7 @@ resource "hcloud_firewall" "k8s_worker_firewall" {
     direction   = "in"
     protocol    = "tcp"
     port        = "10250"
-    source_ips  = [var.subnet_cidr]
+    source_ips  = local.all_ips
     description = "Kubelet API"
   }
 
