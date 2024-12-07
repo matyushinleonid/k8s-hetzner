@@ -22,7 +22,8 @@ resource "hcloud_server" "cpl_node_1" {
 
   firewall_ids = [
     hcloud_firewall.basic_firewall.id,
-    hcloud_firewall.k8s_cpl_firewall.id
+    hcloud_firewall.k8s_cpl_firewall.id,
+    hcloud_firewall.lb_firewall.id
   ]
 
   ssh_keys = [

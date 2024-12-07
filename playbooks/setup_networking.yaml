@@ -1,0 +1,69 @@
+- name: Install Cilium and Kong from local machine
+  hosts: localhost
+  vars:
+    cpl_internal_ipv4: "{{ hostvars[groups['control_plane_nodes'][0]]['internal_ipv4'] }}"
+    worker_internal_ipv4: "{{ hostvars[groups['worker_nodes'][0]]['internal_ipv4'] }}"
+  environment:
+    KUBECONFIG: "{{ lookup('env','HOME') }}/.kube/hetzner.conf"
+  tasks:
+    - name: Install cilium CNI via Helm
+      command: >
+        helm install cilium cilium/cilium --version 1.16.3
+        --namespace kube-system
+        --set ipam.mode=kubernetes
+        --set ipv6.enabled=true
+        --set ipv4.enabled=true
+        --set dualStack=true
+        --set nodeport.enabled=true
+        --set k8sServiceHost={{ cpl_internal_ipv4 }}
+        --set k8sServicePort=6443
+        --set cluster.id=0
+        --set cluster.name=k8s-cluster
+        --set global.eni.enabled=false
+        --set global.nodeinit.enabled=false
+
+    - name: Add Kong Helm repo
+      command: helm repo add kong https://charts.konghq.com
+
+    - name: Update Helm repo
+      command: helm repo update
+
+    - name: Install Kong Ingress with specified values
+      command: >
+        helm install kong kong/kong -n kong --create-namespace
+        --set deployment.daemonset=true
+        --set proxy.http.nodePort=32616
+        --set proxy.tls.nodePort=30620
+
+
+- name: Configure HAProxy on Control Plane node
+  hosts: control_plane_nodes
+  become: true
+  vars:
+    worker_internal_ipv4: "{{ hostvars[groups['worker_nodes'][0]]['internal_ipv4'] }}"
+  tasks:
+    - name: Install HAProxy
+      apt:
+        name: haproxy
+        state: present
+
+    - name: Configure HAProxy
+      lineinfile:
+        path: /etc/haproxy/haproxy.cfg
+        insertafter: EOF
+        line: |
+          frontend http
+              bind *:80
+              bind :::80
+              default_backend kong_http
+
+          backend kong_http
+              balance roundrobin
+              option httpchk GET /
+              http-check expect status 404
+              server node1 {{ worker_internal_ipv4 }}:32616 check
+
+    - name: Restart HAProxy
+      systemd:
+        name: haproxy
+        state: restarted

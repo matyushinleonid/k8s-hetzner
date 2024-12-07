@@ -4,7 +4,7 @@ This repository provides a set of Terraform and Ansible scripts to provision a K
 We use ipv4/ipv6 dual-stack networking and Cilium as the CNI.
 
 
-## How to use
+## How to provision a Kubernetes cluster
 
 Provision base infrastructure on Hetzner Cloud
 ```bash
@@ -23,20 +23,21 @@ cd ./playbooks
 ansible-playbook -i inventory.ini setup_cpl.yaml
 ansible-playbook -i inventory.ini setup_workers.yaml
 ```
+After this the kubeconfig file will be available at `~/.kube/hetzner.conf`
 
-Install CNI
+Install CNI, Kong Ingress Controller and HAProxy
 ```bash
-helm install cilium cilium/cilium --version 1.16.3 \
-  --namespace kube-system \
-  --set ipam.mode=kubernetes \
-  --set ipv6.enabled=true \
-  --set ipv4.enabled=true \
-  --set dualStack=true \
-  --set nodeport.enabled=true \
-  --set k8sServiceHost=10.0.1.5 \
-  --set k8sServicePort=6443 \
-  --set cluster.id=0 \
-  --set cluster.name=k8s-cluster \
-  --set global.eni.enabled=false \
-  --set global.nodeinit.enabled=false
+ansible-playbook -i inventory.ini setup_networking.yaml
 ```
+
+## Usage examples
+
+### Expose a service to the internet 
+
+Suppose you own a domain `example.com` and you want to expose a simple nginx web server to the internet.
+One should create a DNS record for the domain `nginx.example.com` pointing to the public ipv6 addresses of the HAProxy VM (in our case it is the CPL machine).
+```bash
+cd ./examples
+kubectl apply -f exposed-nginx-web-server.yaml
+```
+Remember to set the corresponding domain in the yaml file Ingress resource.
